@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+  // If user refreshes directly on this page, send them back to entry
+  if(!sessionStorage.getItem('entryDone')){
+    window.location.replace('index.html');
+  }
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParaliAI — AI-Powered Stubble Burning Prevention</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#040d08;
+  --bg2:#071410;
+  --green:#00e87a;
+  --green2:#00ff9d;
+  --amber:#f5a623;
+  --red:#ff4136;
+  --white:#edf5ee;
+  --muted:rgba(237,245,238,0.45);
+  --card:rgba(0,232,122,0.04);
+  --border:rgba(0,232,122,0.12);
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--white);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:none;}
+
+/* CURSOR */
+.cur{position:fixed;width:10px;height:10px;background:var(--green);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .3s,height .3s;mix-blend-mode:screen;}
+.cur-r{position:fixed;width:36px;height:36px;border:1px solid rgba(0,232,122,0.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .12s;}
+
+/* NOISE OVERLAY */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.4;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content:space-between;align-items:center;padding:1.8rem 5rem;border-bottom:1px solid transparent;transition:border-color .4s,background .4s;}
+nav.scrolled{background:rgba(4,13,8,0.9);backdrop-filter:blur(20px);border-color:var(--border);}
+.logo{display:flex;align-items:center;gap:.8rem;text-decoration:none;}
+.logo-icon{width:36px;height:36px;position:relative;}
+.logo-icon svg{width:100%;height:100%;}
+.logo-text{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;color:var(--white);}
+.logo-text span{color:var(--green);}
+.nav-links{display:flex;gap:2.5rem;list-style:none;}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:color .3s;}
+.nav-links a:hover{color:var(--green);}
+.nav-cta{background:var(--green);color:var(--bg);padding:.6rem 1.5rem;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border-radius:2px;transition:transform .2s,box-shadow .2s;}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,232,122,0.3);}
+
+/* CANVAS BG */
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none;}
+
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:0 5rem;overflow:hidden;}
+.hero-badge{display:inline-flex;align-items:center;gap:.6rem;background:rgba(0,232,122,0.08);border:1px solid var(--border);border-radius:100px;padding:.5rem 1.2rem;font-size:.7rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--green);margin-bottom:2.5rem;opacity:0;animation:fadeUp .8s .2s forwards;}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+.hero-title{font-size:clamp(3.5rem,8vw,9rem);font-weight:800;line-height:.92;letter-spacing:-.04em;opacity:0;animation:fadeUp .9s .4s forwards;max-width:900px;}
+.hero-title .line2{display:block;color:transparent;-webkit-text-stroke:1px rgba(237,245,238,0.25);}
+.hero-title .line3{display:block;color:var(--green);}
+.hero-sub{margin-top:2.5rem;font-size:.95rem;line-height:1.8;color:var(--muted);max-width:520px;opacity:0;animation:fadeUp .9s .6s forwards;font-family:'DM Mono',monospace;font-size:.8rem;}
+.hero-actions{display:flex;gap:1.5rem;align-items:center;margin-top:3rem;opacity:0;animation:fadeUp .9s .8s forwards;}
+.btn-g{background:var(--green);color:var(--bg);padding:.9rem 2.5rem;font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;border:none;border-radius:3px;cursor:none;text-decoration:none;transition:box-shadow .3s,transform .2s;}
+.btn-g:hover{box-shadow:0 0 40px rgba(0,232,122,0.4);transform:translateY(-2px);}
+.btn-outline{border:1px solid var(--border);color:var(--white);padding:.9rem 2rem;font-weight:600;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;background:transparent;border-radius:3px;cursor:none;text-decoration:none;transition:border-color .3s,color .3s;}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.hero-stats{position:absolute;right:5rem;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2rem;opacity:0;animation:fadeRight .9s 1s forwards;}
+.stat-item{text-align:right;}
+.stat-n{font-size:3.5rem;font-weight:800;line-height:1;color:var(--green);}
+.stat-l{font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem;}
+.hero-scroll{position:absolute;bottom:3rem;left:5rem;display:flex;align-items:center;gap:1rem;opacity:0;animation:fadeUp .9s 1.2s forwards;}
+.scroll-line{width:50px;height:1px;background:linear-gradient(to right,var(--green),transparent);}
+.scroll-txt{font-size:.6rem;font-family:'DM Mono',monospace;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;}
+
+/* SECTIONS */
+section{position:relative;z-index:1;padding:8rem 5rem;}
+.sec-tag{display:inline-flex;align-items:center;gap:.8rem;font-size:.65rem;font-family:'DM Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--green);margin-bottom:1.5rem;}
+.sec-tag::before{content:'//';color:rgba(0,232,122,0.4);}
+.sec-title{font-size:clamp(2.5rem,5vw,5rem);font-weight:800;line-height:.95;letter-spacing:-.03em;margin-bottom:1.5rem;}
+.sec-title em{font-style:normal;color:var(--green);}
+
+/* PROBLEM SECTION */
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5px;margin-top:5rem;background:var(--border);}
+.prob-card{background:var(--bg);padding:3rem;position:relative;overflow:hidden;}
+.prob-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right,var(--green),transparent);opacity:0;transition:opacity .4s;}
+.prob-card:hover::before{opacity:1;}
+.prob-icon{font-size:2.5rem;margin-bottom:1.5rem;display:block;}
+.prob-num{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--green);letter-spacing:.2em;margin-bottom:.8rem;}
+.prob-card h3{font-size:1.3rem;font-weight:700;margin-bottom:.8rem;letter-spacing:-.02em;}
+.prob-card p{font-size:.8rem;line-height:1.8;color:var(--muted);font-family:'DM Mono',monospace;}
+
+/* AI DEMO SECTION */
+.demo-section{background:var(--bg2);}
+.demo-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:4rem;margin-top:4rem;align-items:start;}
+.form-card{background:rgba(0,232,122,0.03);border:1px solid var(--border);border-radius:8px;padding:2.5rem;}
+.form-card h3{font-size:1.1rem;font-weight:700;margin-bottom:.4rem;}
+.form-card p{font-size:.75rem;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:2rem;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-group{display:flex;flex-direction:column;gap:.5rem;}
+.form-group.full{grid-column:span 2;}
+label{font-size:.65rem;font-family:'DM Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
+input,select{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:4px;padding:.8rem 1rem;color:var(--white);font-family:'DM Mono',monospace;font-size:.8rem;outline:none;transition:border-color .3s;}
+input:focus,select:focus{border-color:var(--green);}
+select option{background:#040d08;}
+.range-wrap{display:flex;align-items:center;gap:1rem;}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--border);border-radius:2px;border:none;padding:0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--green);border-radius:50%;cursor:pointer;}
+.range-val{font-family:'DM Mono',monospace;font-size:.8rem;color:var(--green);min-width:2.5rem;text-align:right;}
+.predict-btn{width:100%;margin-top:1.5rem;background:var(--green);color:var(--bg);border:none;padding:1rem;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;letter-spacing:.08em;border-radius:4px;cursor:none;transition:box-shadow .3s,transform .2s;display:flex;align-items:center;justify-content:center;gap:.8rem;}
+.predict-btn:hover{box-shadow:0 0 30px rgba(0,232,122,0.35);transform:translateY(-1px);}
+
+/* RESULT CARD */
+.result-card{background:rgba(0,232,122,0.03);border:1px solid var(--border);border-radius:8px;padding:2.5rem;display:flex;flex-direction:column;gap:2rem;}
+.result-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:1rem;opacity:.4;}
+.result-placeholder .big-icon{font-size:4rem;}
+.result-placeholder p{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--muted);}
+.risk-display{display:none;flex-direction:column;gap:2rem;}
+.risk-badge{display:inline-flex;align-items:center;gap:.8rem;padding:.8rem 1.5rem;border-radius:4px;font-weight:700;font-size:1rem;letter-spacing:.05em;border-width:1px;border-style:solid;}
+.risk-badge.low{background:rgba(0,232,122,0.1);border-color:var(--green);color:var(--green);}
+.risk-badge.medium{background:rgba(245,166,35,0.1);border-color:var(--amber);color:var(--amber);}
+.risk-badge.high{background:rgba(255,65,54,0.1);border-color:var(--red);color:var(--red);}
+.risk-meter{margin:.5rem 0;}
+.risk-meter-label{display:flex;justify-content:space-between;font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:.5rem;}
+.risk-bar{height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;}
+.risk-fill{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(0.16,1,0.3,1);}
+.risk-fill.low{background:linear-gradient(to right,#00e87a,#00ff9d);}
+.risk-fill.medium{background:linear-gradient(to right,#f5a623,#ffcc44);}
+.risk-fill.high{background:linear-gradient(to right,#ff4136,#ff7060);}
+.rec-title{font-size:.7rem;font-family:'DM Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;}
+.recs{display:flex;flex-direction:column;gap:.5rem;}
+.rec-item{display:flex;align-items:center;gap:.8rem;font-size:.8rem;padding:.6rem .8rem;background:rgba(0,232,122,0.04);border:1px solid var(--border);border-radius:4px;}
+.rec-item span:first-child{font-size:1.1rem;}
+.co2-box{background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-radius:4px;padding:1rem 1.2rem;}
+.co2-box .co2-label{font-size:.65rem;font-family:'DM Mono',monospace;color:var(--amber);letter-spacing:.15em;text-transform:uppercase;}
+.co2-box .co2-val{font-size:2rem;font-weight:800;color:var(--amber);margin-top:.2rem;}
+.co2-box .co2-sub{font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);}
+
+/* POLLUTION SECTION */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem;}
+.chart-card{background:rgba(0,232,122,0.03);border:1px solid var(--border);border-radius:8px;padding:2rem;}
+.chart-card h4{font-size:.9rem;font-weight:700;margin-bottom:.4rem;}
+.chart-card p{font-size:.7rem;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:1.5rem;}
+.chart-wrap{position:relative;height:220px;}
+
+/* MODULES SECTION */
+.modules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:4rem;background:var(--border);}
+.mod-card{background:var(--bg);padding:2.5rem;position:relative;overflow:hidden;transition:background .3s;}
+.mod-card:hover{background:#071a10;}
+.mod-icon-wrap{width:50px;height:50px;background:rgba(0,232,122,0.08);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1.5rem;}
+.mod-card h3{font-size:1rem;font-weight:700;margin-bottom:.7rem;letter-spacing:-.01em;}
+.mod-card p{font-size:.75rem;line-height:1.7;color:var(--muted);font-family:'DM Mono',monospace;}
+.mod-tag{display:inline-block;margin-top:1rem;font-size:.6rem;font-family:'DM Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--green);border:1px solid var(--border);padding:.3rem .7rem;border-radius:2px;}
+
+/* SDG SECTION */
+.sdg-section{background:var(--bg2);}
+.sdg-grid{display:flex;flex-wrap:wrap;gap:1.5rem;margin-top:3rem;}
+.sdg-badge{display:flex;align-items:center;gap:1rem;background:rgba(0,232,122,0.04);border:1px solid var(--border);border-radius:6px;padding:1.2rem 1.5rem;flex:1;min-width:220px;transition:border-color .3s,transform .3s;}
+.sdg-badge:hover{border-color:var(--green);transform:translateY(-3px);}
+.sdg-num{font-size:2.2rem;font-weight:800;color:var(--green);line-height:1;min-width:45px;}
+.sdg-info h4{font-size:.85rem;font-weight:700;margin-bottom:.2rem;}
+.sdg-info p{font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);}
+
+/* TEAM / ABOUT */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;margin-top:4rem;}
+.about-visual{position:relative;}
+#about-c{width:100%;height:400px;}
+.tech-stack{margin-top:3rem;}
+.tech-title{font-size:.65rem;font-family:'DM Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;}
+.tech-pills{display:flex;flex-wrap:wrap;gap:.6rem;}
+.pill{background:rgba(0,232,122,0.07);border:1px solid var(--border);border-radius:2px;padding:.4rem .9rem;font-size:.7rem;font-family:'DM Mono',monospace;color:var(--green);}
+
+/* FOOTER */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:3rem 5rem;display:flex;justify-content:space-between;align-items:center;}
+footer p{font-size:.7rem;font-family:'DM Mono',monospace;color:var(--muted);}
+footer a{color:var(--green);text-decoration:none;}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(35px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);}
+.reveal.up{opacity:1;transform:translateY(0);}
+
+/* KEYFRAMES */
+@keyframes fadeUp{from{opacity:0;transform:translateY(25px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeRight{from{opacity:0;transform:translate(25px,-50%);}to{opacity:1;transform:translate(0,-50%);}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,232,122,.4);}50%{box-shadow:0 0 0 6px rgba(0,232,122,0);}}
+
+/* FIELD ANIMATION CANVAS */
+#field-canvas{position:absolute;right:0;top:50%;transform:translateY(-50%);width:45vw;height:80vh;opacity:.25;pointer-events:none;}
+
+/* MOBILE */
+@media(max-width:768px){
+  nav{padding:1.2rem 2rem;}
+  .nav-links{display:none;}
+  .hero{padding:0 2rem;}
+  .hero-stats{display:none;}
+  section{padding:5rem 2rem;}
+  .problem-grid,.demo-wrapper,.charts-grid,.modules-grid,.about-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .form-group.full{grid-column:span 1;}
+}
+</style>
+</head>
+<body>
+
+<div class="cur" id="cur"></div>
+<div class="cur-r" id="cur-r"></div>
+<canvas id="bgc"></canvas>
+
+<nav id="nav">
+  <a href="#" class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 36 36" fill="none">
+        <path d="M18 3L33 30H3L18 3Z" stroke="#00e87a" stroke-width="1.5" fill="none"/>
+        <path d="M18 12L26 27H10L18 12Z" fill="rgba(0,232,122,0.15)" stroke="#00e87a" stroke-width="1"/>
+        <circle cx="18" cy="10" r="2" fill="#00e87a"/>
+      </svg>
+    </div>
+    <span class="logo-text">Parali<span>AI</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#demo">AI Demo</a></li>
+    <li><a href="#modules">Modules</a></li>
+    <li><a href="#sdg">SDGs</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <a href="#demo" class="nav-cta">Try Demo</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <canvas id="field-canvas"></canvas>
+  <div>
+    <div class="hero-badge">🌾 Punjab · AI for Agriculture · SDG 13</div>
+    <h1 class="hero-title">
+      STOP THE<br>
+      <span class="line2">SMOKE.</span><br>
+      <span class="line3">SAVE THE SOIL.</span>
+    </h1>
+    <p class="hero-sub">
+      // AI-powered prediction & recommendation system<br>
+      // Fighting parali burning in Punjab using ML<br>
+      // Real alternatives. Real impact. Real science.
+    </p>
+    <div class="hero-actions">
+      <a href="#demo" class="btn-g">Run AI Prediction</a>
+      <a href="#problem" class="btn-outline">Learn the Problem</a>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-n">35M</div>
+      <div class="stat-l">Tonnes burned / yr</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-n">9.5M</div>
+      <div class="stat-l">Hectares affected</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-n">500+</div>
+      <div class="stat-l">AQI spike in Delhi</div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <span class="scroll-txt">Scroll to explore</span>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="reveal">
+    <div class="sec-tag">The Problem</div>
+    <h2 class="sec-title">WHY PUNJAB<br><em>IS BURNING</em></h2>
+    <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);max-width:560px;line-height:1.8;">Every October–November, millions of farmers set fire to crop stubble. A 40-day window, a 500-year-old habit, and a crisis that suffocates an entire subcontinent.</p>
+  </div>
+  <div class="problem-grid">
+    <div class="prob-card reveal">
+      <span class="prob-icon">🔥</span>
+      <div class="prob-num">01 — ROOT CAUSE</div>
+      <h3>The 40-Day Trap</h3>
+      <p>Farmers have only 2–4 weeks between rice harvest and wheat sowing. Burning is fast and free. No machine, no time, no alternative — or so it seems.</p>
+    </div>
+    <div class="prob-card reveal" style="transition-delay:.1s">
+      <span class="prob-icon">🌫️</span>
+      <div class="prob-num">02 — HEALTH IMPACT</div>
+      <h3>Air Quality Crisis</h3>
+      <p>Burning parali releases PM2.5, CO₂, SO₂, and black carbon. AQI in Delhi and Punjab spikes beyond 500 — 20× safe levels. Millions develop respiratory illness.</p>
+    </div>
+    <div class="prob-card reveal" style="transition-delay:.2s">
+      <span class="prob-icon">🪱</span>
+      <div class="prob-num">03 — SOIL DAMAGE</div>
+      <h3>Destroying the Land</h3>
+      <p>Heat above 33°C kills soil microorganisms, fungi, and bacteria. Short-term ash nutrients cannot compensate for long-term biological destruction.</p>
+    </div>
+    <div class="prob-card reveal" style="transition-delay:.3s">
+      <span class="prob-icon">💸</span>
+      <div class="prob-num">04 — THE GAP</div>
+      <h3>Solutions Exist — Access Doesn't</h3>
+      <p>Government-subsidized Happy Seeders, Mulchers and Balers exist. But awareness, machine-sharing, logistics, and recommendations remain broken. AI can fix this.</p>
+    </div>
+  </div>
+</section>
+
+<!-- AI DEMO -->
+<section id="demo" class="demo-section">
+  <div class="reveal">
+    <div class="sec-tag">AI / ML Demo</div>
+    <h2 class="sec-title">PREDICT YOUR<br><em>BURN RISK</em></h2>
+    <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);max-width:520px;line-height:1.8;">Enter your farm conditions. Our Random Forest classifier analyzes your inputs and predicts burning risk — then recommends the best alternatives.</p>
+  </div>
+  <div class="demo-wrapper">
+    <!-- INPUT FORM -->
+    <div class="form-card reveal">
+      <h3>Farm Input Parameters</h3>
+      <p>// Powered by supervised ML classification</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Crop Type</label>
+          <select id="cropType">
+            <option value="rice">Rice (Paddy)</option>
+            <option value="wheat">Wheat</option>
+            <option value="maize">Maize</option>
+            <option value="sugarcane">Sugarcane</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Residue Amount</label>
+          <select id="residue">
+            <option value="low">Low (&lt;2 tonnes/ha)</option>
+            <option value="medium" selected>Medium (2–5 t/ha)</option>
+            <option value="high">High (&gt;5 tonnes/ha)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Machine Availability</label>
+          <select id="machine">
+            <option value="none">None Available</option>
+            <option value="partial">Partially Available</option>
+            <option value="full">Fully Available</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Labour Availability</label>
+          <select id="labour">
+            <option value="none">No Labour</option>
+            <option value="some" selected>Some Labour</option>
+            <option value="full">Adequate Labour</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Days Until Next Sowing: <span id="daysVal" style="color:var(--green)">15</span> days</label>
+          <div class="range-wrap">
+            <input type="range" id="days" min="5" max="45" value="15" oninput="document.getElementById('daysVal').textContent=this.value">
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Budget for Alternatives: ₹<span id="budgetVal" style="color:var(--green)">5000</span></label>
+          <div class="range-wrap">
+            <input type="range" id="budget" min="0" max="20000" step="500" value="5000" oninput="document.getElementById('budgetVal').textContent=parseInt(this.value).toLocaleString('en-IN')">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Weather Conditions</label>
+          <select id="weather">
+            <option value="dry">Dry & Windy</option>
+            <option value="humid" selected>Humid</option>
+            <option value="wet">Wet / Rainy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Field Size (acres)</label>
+          <select id="fieldSize">
+            <option value="small">Small (&lt;3 acres)</option>
+            <option value="medium" selected>Medium (3–10 acres)</option>
+            <option value="large">Large (&gt;10 acres)</option>
+          </select>
+        </div>
+      </div>
+      <button class="predict-btn" onclick="runPrediction()">
+        <span>⚡</span> Run AI Prediction
+      </button>
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-card reveal" style="transition-delay:.15s">
+      <div class="result-placeholder" id="placeholder">
+        <div class="big-icon">🤖</div>
+        <p>// Awaiting farmer inputs<br>// Fill the form and run prediction</p>
+      </div>
+      <div class="risk-display" id="riskDisplay">
+        <div>
+          <div style="font-size:.65rem;font-family:'DM Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;">// ML Risk Classification</div>
+          <div class="risk-badge" id="riskBadge">— RISK LEVEL</div>
+        </div>
+        <div class="risk-meter">
+          <div class="risk-meter-label"><span>BURN RISK SCORE</span><span id="riskPct">—</span></div>
+          <div class="risk-bar"><div class="risk-fill" id="riskFill" style="width:0%"></div></div>
+        </div>
+        <div>
+          <div class="rec-title">// Recommended Alternatives</div>
+          <div class="recs" id="recsList"></div>
+        </div>
+        <div class="co2-box">
+          <div class="co2-label">Estimated CO₂ if burned</div>
+          <div class="co2-val" id="co2Val">—</div>
+          <div class="co2-sub">kg CO₂ equivalent per hectare</div>
+        </div>
+        <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:rgba(0,232,122,0.4);border-top:1px solid var(--border);padding-top:1rem;">
+          Model: Random Forest Classifier · Accuracy: ~87% · scikit-learn
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POLLUTION ANALYSIS -->
+<section id="pollution">
+  <div class="reveal">
+    <div class="sec-tag">Pollution Analysis</div>
+    <h2 class="sec-title">ENVIRONMENTAL<br><em>IMPACT DATA</em></h2>
+  </div>
+  <div class="charts-grid reveal">
+    <div class="chart-card">
+      <h4>AQI vs Burning Season</h4>
+      <p>// Monthly air quality index — Punjab & Delhi</p>
+      <div class="chart-wrap"><canvas id="aqiChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h4>CO₂ Emissions Comparison</h4>
+      <p>// Burning vs sustainable alternatives (tonnes CO₂/ha)</p>
+      <div class="chart-wrap"><canvas id="co2Chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h4>Soil Health Impact</h4>
+      <p>// Microbial activity % — before vs after burning</p>
+      <div class="chart-wrap"><canvas id="soilChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h4>Alternative Method Adoption</h4>
+      <p>// Farmers using CRM methods 2020–2025</p>
+      <div class="chart-wrap"><canvas id="adoptionChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODULES -->
+<section id="modules">
+  <div class="reveal">
+    <div class="sec-tag">System Modules</div>
+    <h2 class="sec-title">HOW THE<br><em>AI WORKS</em></h2>
+  </div>
+  <div class="modules-grid">
+    <div class="mod-card reveal">
+      <div class="mod-icon-wrap">🧠</div>
+      <h3>Risk Prediction Engine</h3>
+      <p>Random Forest classifier trained on Punjab farmer data. Takes 8 input parameters and classifies burning probability into Low, Medium, or High risk categories.</p>
+      <span class="mod-tag">scikit-learn · Python</span>
+    </div>
+    <div class="mod-card reveal" style="transition-delay:.1s">
+      <div class="mod-icon-wrap">💡</div>
+      <h3>Recommendation System</h3>
+      <p>Rule-based + ML hybrid that maps farmer conditions to optimal alternatives: composting, mushroom farming, biomass selling, animal feed, or biofuel generation.</p>
+      <span class="mod-tag">Decision Tree · Flask API</span>
+    </div>
+    <div class="mod-card reveal" style="transition-delay:.2s">
+      <div class="mod-icon-wrap">🚜</div>
+      <h3>Machine Sharing Network</h3>
+      <p>K-means clustering groups nearby farmers with similar needs. Optimizes Happy Seeder, Mulcher & Rotavator sharing schedules to reduce per-farmer cost.</p>
+      <span class="mod-tag">K-Means Clustering</span>
+    </div>
+    <div class="mod-card reveal" style="transition-delay:.3s">
+      <div class="mod-icon-wrap">🌍</div>
+      <h3>Pollution Calculator</h3>
+      <p>Estimates CO₂ emissions, PM2.5, AQI impact, and carbon footprint for a given farm if burned. Compares against sustainable alternatives with eco-score rating.</p>
+      <span class="mod-tag">Environmental Modeling</span>
+    </div>
+    <div class="mod-card reveal" style="transition-delay:.4s">
+      <div class="mod-icon-wrap">📊</div>
+      <h3>Farmer Dashboard</h3>
+      <p>Simple, accessible UI supporting Punjabi & Hindi. Icon-based navigation for low-literacy users. Designed for village officers, NGOs, and agricultural centers.</p>
+      <span class="mod-tag">HTML · CSS · JS</span>
+    </div>
+    <div class="mod-card reveal" style="transition-delay:.5s">
+      <div class="mod-icon-wrap">🏛️</div>
+      <h3>Govt. Scheme Integrator</h3>
+      <p>Maps available CRM subsidies, nearby machine rental centers, and government support programs relevant to the farmer's district, residue type, and budget.</p>
+      <span class="mod-tag">Resource Database</span>
+    </div>
+  </div>
+</section>
+
+<!-- SDG -->
+<section id="sdg" class="sdg-section">
+  <div class="reveal">
+    <div class="sec-tag">UN Sustainable Development Goals</div>
+    <h2 class="sec-title">BUILT FOR<br><em>THE PLANET</em></h2>
+    <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);max-width:540px;line-height:1.8;margin-top:1rem;">ParaliAI directly addresses 5 United Nations SDGs — turning a local agricultural problem into a globally relevant solution.</p>
+  </div>
+  <div class="sdg-grid reveal">
+    <div class="sdg-badge">
+      <div class="sdg-num">13</div>
+      <div class="sdg-info">
+        <h4>Climate Action</h4>
+        <p>// Primary SDG — reducing GHG emissions from burning</p>
+      </div>
+    </div>
+    <div class="sdg-badge">
+      <div class="sdg-num">3</div>
+      <div class="sdg-info">
+        <h4>Good Health & Well-being</h4>
+        <p>// Reducing air pollution & respiratory disease</p>
+      </div>
+    </div>
+    <div class="sdg-badge">
+      <div class="sdg-num">15</div>
+      <div class="sdg-info">
+        <h4>Life on Land</h4>
+        <p>// Protecting soil health & biodiversity</p>
+      </div>
+    </div>
+    <div class="sdg-badge">
+      <div class="sdg-num">12</div>
+      <div class="sdg-info">
+        <h4>Responsible Consumption</h4>
+        <p>// Promoting sustainable agricultural production</p>
+      </div>
+    </div>
+    <div class="sdg-badge">
+      <div class="sdg-num">9</div>
+      <div class="sdg-info">
+        <h4>Industry & Innovation</h4>
+        <p>// AI infrastructure for agricultural modernization</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-grid">
+    <div class="about-visual reveal">
+      <canvas id="about-c"></canvas>
+      <div class="tech-stack">
+        <div class="tech-title">// Technology Stack</div>
+        <div class="tech-pills">
+          <span class="pill">Python</span>
+          <span class="pill">scikit-learn</span>
+          <span class="pill">Flask</span>
+          <span class="pill">pandas</span>
+          <span class="pill">Chart.js</span>
+          <span class="pill">HTML/CSS/JS</span>
+          <span class="pill">Random Forest</span>
+          <span class="pill">K-Means</span>
+          <span class="pill">Decision Tree</span>
+        </div>
+      </div>
+    </div>
+    <div class="reveal" style="transition-delay:.15s">
+      <div class="sec-tag">About the Project</div>
+      <h2 class="sec-title">A STUDENT<br>TEAM FROM<br><em>PUNJAB</em></h2>
+      <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);line-height:1.9;margin-top:1.5rem;">This project was built by a student team tackling one of Punjab's most pressing environmental crises. We didn't want to build another chatbot — we wanted to build something that actually matters.</p>
+      <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);line-height:1.9;margin-top:1rem;">ParaliAI is a 40-day sprint project connecting AI prediction, environmental science, and real agricultural infrastructure — designed to work not just in presentations, but in actual villages.</p>
+      <div style="margin-top:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">~87%</div>
+          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">ML Model Accuracy</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">8</div>
+          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">Input Parameters</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">6</div>
+          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">System Modules</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">40</div>
+          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">Day Build Sprint</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 ParaliAI — Student Project · Punjab, India</p>
+  <p>Built for <a href="#sdg">SDG 13</a> · Climate Action</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
