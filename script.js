@@ -1,4 +1,4 @@
-// CURSOR
+// ── CURSOR ──
 const cur=document.getElementById('cur'),curR=document.getElementById('cur-r');
 document.addEventListener('mousemove',e=>{
   cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';
@@ -9,12 +9,12 @@ document.querySelectorAll('a,button,.mod-card,.sdg-badge,.prob-card').forEach(el
   el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';curR.style.width='36px';curR.style.height='36px';});
 });
 
-// NAV SCROLL
+// ── NAV SCROLL ──
 window.addEventListener('scroll',()=>{
   document.getElementById('nav').classList.toggle('scrolled',scrollY>60);
 });
 
-// BG CANVAS
+// ── BG CANVAS ──
 const bgc=document.getElementById('bgc');
 const bgx=bgc.getContext('2d');
 let W,H,pts=[],t=0;
@@ -25,14 +25,12 @@ let mx=W/2,my=H/2;
 document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
 function bgLoop(){
   bgx.clearRect(0,0,W,H);t+=.004;
-  // ambient glow
   const g=bgx.createRadialGradient(mx,my,0,mx,my,500);
   g.addColorStop(0,'rgba(0,232,122,0.05)');g.addColorStop(1,'transparent');
   bgx.fillStyle=g;bgx.fillRect(0,0,W,H);
   const g2=bgx.createRadialGradient(W*.15,H*.7,0,W*.15,H*.7,350);
   g2.addColorStop(0,'rgba(0,100,60,0.04)');g2.addColorStop(1,'transparent');
   bgx.fillStyle=g2;bgx.fillRect(0,0,W,H);
-  // particles
   pts.forEach(p=>{
     p.x+=p.vx;p.y+=p.vy;
     if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
@@ -47,7 +45,7 @@ function bgLoop(){
   requestAnimationFrame(bgLoop);
 }bgLoop();
 
-// HERO FIELD CANVAS — animated wheat field silhouette
+// ── WHEAT FIELD CANVAS ──
 (function(){
   const c=document.getElementById('field-canvas');
   if(!c)return;
@@ -59,13 +57,10 @@ function bgLoop(){
   function draw(){
     const w=c.width,h=c.height;cx.clearRect(0,0,w,h);t+=.015;
     stalks.forEach(s=>{
-      const x=s.x*w,baseY=h;
-      const stalkH=s.h*h;
-      const sway=Math.sin(t*s.speed+s.phase)*12;
+      const x=s.x*w,baseY=h,stalkH=s.h*h,sway=Math.sin(t*s.speed+s.phase)*12;
       cx.beginPath();cx.moveTo(x,baseY);
       cx.quadraticCurveTo(x+sway*0.5,baseY-stalkH*0.5,x+sway,baseY-stalkH);
       cx.strokeStyle='rgba(0,232,122,0.3)';cx.lineWidth=s.w;cx.lineCap='round';cx.stroke();
-      // grain head
       cx.beginPath();cx.ellipse(x+sway,baseY-stalkH,s.w*2,8,Math.atan2(sway,stalkH),0,Math.PI*2);
       cx.fillStyle='rgba(0,232,122,0.15)';cx.fill();
     });
@@ -73,78 +68,163 @@ function bgLoop(){
   }draw();
 })();
 
-// ABOUT CANVAS — neural network visualization
+// ── NEURAL NETWORK CANVAS ──
 (function(){
   const c=document.getElementById('about-c');
   if(!c)return;
   const cx=c.getContext('2d');let t=0;
   function r(){c.width=c.offsetWidth;c.height=400;}
   r();window.addEventListener('resize',r);
-  const layers=[[2],[4,4],[3,3],[2]];
   const nodes=[];
-  const layerCount=4,layerX=[0.12,0.37,0.63,0.88];
+  const layerX=[0.12,0.37,0.63,0.88];
   const layerNodes=[3,5,5,2];
   layerX.forEach((lx,li)=>{
-    const n=layerNodes[li];
-    for(let i=0;i<n;i++){
-      nodes.push({lx,ly:(i+1)/(n+1),li,i,pulse:Math.random()*Math.PI*2});
-    }
+    for(let i=0;i<layerNodes[li];i++)nodes.push({lx,ly:(i+1)/(layerNodes[li]+1),li,pulse:Math.random()*Math.PI*2});
   });
   function draw(){
     const w=c.width,h=c.height;cx.clearRect(0,0,w,h);t+=.02;
-    // connections
-    nodes.forEach(a=>{
-      nodes.forEach(b=>{
-        if(b.li===a.li+1){
-          const ax=a.lx*w,ay=a.ly*h,bx=b.lx*w,by=b.ly*h;
-          const strength=Math.sin(t+a.pulse)*0.5+0.5;
-          cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(bx,by);
-          cx.strokeStyle=`rgba(0,232,122,${0.04+strength*0.12})`;cx.lineWidth=1;cx.stroke();
-        }
-      });
-    });
-    // nodes
+    nodes.forEach(a=>{nodes.forEach(b=>{
+      if(b.li===a.li+1){
+        const strength=Math.sin(t+a.pulse)*0.5+0.5;
+        cx.beginPath();cx.moveTo(a.lx*w,a.ly*h);cx.lineTo(b.lx*w,b.ly*h);
+        cx.strokeStyle=`rgba(0,232,122,${0.04+strength*0.12})`;cx.lineWidth=1;cx.stroke();
+      }
+    });});
     nodes.forEach(n=>{
-      const x=n.lx*w,y=n.ly*h;
-      const glow=Math.sin(t*1.5+n.pulse)*0.5+0.5;
+      const x=n.lx*w,y=n.ly*h,glow=Math.sin(t*1.5+n.pulse)*0.5+0.5;
       const g=cx.createRadialGradient(x,y,0,x,y,14);
-      g.addColorStop(0,`rgba(0,232,122,${0.3+glow*0.5})`);
-      g.addColorStop(1,'transparent');
+      g.addColorStop(0,`rgba(0,232,122,${0.3+glow*0.5})`);g.addColorStop(1,'transparent');
       cx.beginPath();cx.arc(x,y,14,0,Math.PI*2);cx.fillStyle=g;cx.fill();
       cx.beginPath();cx.arc(x,y,4,0,Math.PI*2);
       cx.fillStyle=`rgba(0,232,122,${0.6+glow*0.4})`;cx.fill();
     });
-    // labels
     cx.fillStyle='rgba(0,232,122,0.25)';cx.font='10px DM Mono';cx.textAlign='center';
-    const lbls=['INPUT','HIDDEN','HIDDEN','OUTPUT'];
-    layerX.forEach((lx,li)=>{cx.fillText(lbls[li],lx*w,h-10);});
+    ['INPUT','HIDDEN','HIDDEN','OUTPUT'].forEach((l,i)=>cx.fillText(l,layerX[i]*w,h-10));
     requestAnimationFrame(draw);
   }draw();
 })();
 
-// CHARTS
+// ── CHART DEFAULTS ──
 Chart.defaults.color='rgba(237,245,238,0.4)';
 Chart.defaults.borderColor='rgba(0,232,122,0.1)';
 Chart.defaults.font.family="'DM Mono',monospace";
 Chart.defaults.font.size=10;
 
-// AQI Chart
-new Chart(document.getElementById('aqiChart'),{
+// ── AQI HELPERS (defined first, used everywhere below) ──
+function aqiColor(val){
+  if(val<=50)  return '#00e87a';
+  if(val<=100) return '#f5a623';
+  if(val<=200) return '#ff8c00';
+  return '#ff4136';
+}
+function aqiLabel(val){
+  if(val<=50)  return '🟢 GOOD';
+  if(val<=100) return '🟡 MODERATE';
+  if(val<=200) return '🟠 UNHEALTHY';
+  return '🔴 HAZARDOUS';
+}
+function injectAQIBadge(chartCard, label, value){
+  const color = aqiColor(value);
+  const id = 'live-badge-' + label.toLowerCase();
+  let badge = document.getElementById(id);
+  if(!badge){
+    badge = document.createElement('div');
+    badge.id = id;
+    const p = chartCard.querySelector('p');
+    if(p) p.after(badge);
+  }
+  badge.style.cssText = 'display:inline-flex;align-items:center;gap:.6rem;background:rgba(0,0,0,0.5);border:1px solid '+color+';border-radius:4px;padding:.4rem .9rem;margin-right:.6rem;margin-bottom:.8rem;font-family:"DM Mono",monospace;font-size:.7rem;';
+  badge.innerHTML =
+    '<span style="width:7px;height:7px;background:'+color+';border-radius:50%;display:inline-block;"></span>' +
+    '<span style="color:rgba(255,255,255,0.45);">'+label+'</span>' +
+    '<span style="color:'+color+';font-weight:700;font-size:.95rem;margin:0 .2rem;">'+value+'</span>' +
+    '<span style="color:rgba(255,255,255,0.3);font-size:.6rem;">'+aqiLabel(value)+'</span>';
+}
+
+// ── LIVE AQI API ──
+async function getLAQI(){
+  try{
+    const r = await fetch('https://api.waqi.info/feed/india/ludhiana/punjab-agricultural-university/?token=4d75a4260e1677823ddc03f7ab51d0ab3a4f7bab');
+    const d = await r.json();
+    return d.status==='ok' ? d.data.aqi : null;
+  }catch(e){ return null; }
+}
+async function getDAQI(){
+  try{
+    const r = await fetch('https://api.waqi.info/feed/A567706?token=4d75a4260e1677823ddc03f7ab51d0ab3a4f7bab');
+    const d = await r.json();
+    return d.status==='ok' ? d.data.aqi : null;
+  }catch(e){ return null; }
+}
+
+// ── AQI CHART ──
+const historicalPunjab = [45,55,70,280,480,320,180];
+const historicalDelhi  = [60,70,90,320,510,380,210];
+const monthLabels      = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
+
+// Seasonal fallback (used immediately, replaced by real API if available)
+const currMonth      = new Date().getMonth();
+const isBurnSeason   = currMonth >= 9 && currMonth <= 11;
+const fallbackPunjab = isBurnSeason ? 312 : 78;
+const fallbackDelhi  = isBurnSeason ? 387 : 95;
+
+const aqiChart = new Chart(document.getElementById('aqiChart'),{
   type:'line',
   data:{
-    labels:['Jul','Aug','Sep','Oct','Nov','Dec','Jan'],
+    labels:[...monthLabels,'LIVE NOW'],
     datasets:[{
-      label:'Punjab AQI',data:[45,55,70,280,480,320,180],
-      borderColor:'#ff4136',backgroundColor:'rgba(255,65,54,0.08)',tension:.4,fill:true,borderWidth:2,pointRadius:3
+      label:'Punjab AQI',
+      data:[...historicalPunjab, fallbackPunjab],
+      borderColor:'#ff4136',
+      backgroundColor:'rgba(255,65,54,0.08)',
+      tension:.4,fill:true,borderWidth:2,
+      pointRadius:[3,3,3,3,3,3,3,8],
+      pointBackgroundColor:['#ff4136','#ff4136','#ff4136','#ff4136','#ff4136','#ff4136','#ff4136', aqiColor(fallbackPunjab)]
     },{
-      label:'Delhi AQI',data:[60,70,90,320,510,380,210],
-      borderColor:'#f5a623',backgroundColor:'rgba(245,166,35,0.06)',tension:.4,fill:true,borderWidth:2,pointRadius:3
+      label:'Delhi AQI',
+      data:[...historicalDelhi, fallbackDelhi],
+      borderColor:'#f5a623',
+      backgroundColor:'rgba(245,166,35,0.06)',
+      tension:.4,fill:true,borderWidth:2,
+      pointRadius:[3,3,3,3,3,3,3,8],
+      pointBackgroundColor:['#f5a623','#f5a623','#f5a623','#f5a623','#f5a623','#f5a623','#f5a623', aqiColor(fallbackDelhi)]
     }]
   },
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(237,245,238,0.5)',font:{size:10}}}},scales:{x:{grid:{color:'rgba(0,232,122,0.05)'}},y:{grid:{color:'rgba(0,232,122,0.05)'}}}}
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'rgba(237,245,238,0.5)',font:{size:10}}}},
+    scales:{x:{grid:{color:'rgba(0,232,122,0.05)'}},y:{grid:{color:'rgba(0,232,122,0.05)'}}}
+  }
 });
 
-// CO2 Chart
+// Show badges immediately with fallback values
+window.addEventListener('load', function(){
+  const aqiCard = document.getElementById('aqiChart') ? document.getElementById('aqiChart').closest('.chart-card') : null;
+  if(aqiCard){
+    injectAQIBadge(aqiCard, 'PUNJAB', fallbackPunjab);
+    injectAQIBadge(aqiCard, 'DELHI', fallbackDelhi);
+  }
+  // Then try to fetch real values and update
+  Promise.all([getLAQI(), getDAQI()]).then(function(results){
+    const punjabAQI = results[0];
+    const delhiAQI  = results[1];
+    if(punjabAQI !== null){
+      aqiChart.data.datasets[0].data[7] = punjabAQI;
+      aqiChart.data.datasets[0].pointBackgroundColor[7] = aqiColor(punjabAQI);
+      aqiChart.update();
+      if(aqiCard) injectAQIBadge(aqiCard, 'PUNJAB', punjabAQI);
+    }
+    if(delhiAQI !== null){
+      aqiChart.data.datasets[1].data[7] = delhiAQI;
+      aqiChart.data.datasets[1].pointBackgroundColor[7] = aqiColor(delhiAQI);
+      aqiChart.update();
+      if(aqiCard) injectAQIBadge(aqiCard, 'DELHI', delhiAQI);
+    }
+    console.log('Live AQI — Punjab:', punjabAQI || fallbackPunjab, '| Delhi:', delhiAQI || fallbackDelhi);
+  });
+});
+
+// ── CO2 CHART ──
 new Chart(document.getElementById('co2Chart'),{
   type:'bar',
   data:{
@@ -160,7 +240,7 @@ new Chart(document.getElementById('co2Chart'),{
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,232,122,0.05)'}},y:{grid:{color:'rgba(0,232,122,0.05)'}}}}
 });
 
-// Soil Chart
+// ── SOIL CHART ──
 new Chart(document.getElementById('soilChart'),{
   type:'radar',
   data:{
@@ -176,7 +256,7 @@ new Chart(document.getElementById('soilChart'),{
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(237,245,238,0.5)'}}},scales:{r:{grid:{color:'rgba(0,232,122,0.08)'},ticks:{display:false},pointLabels:{color:'rgba(237,245,238,0.4)',font:{size:9}}}}}
 });
 
-// Adoption Chart
+// ── ADOPTION CHART ──
 new Chart(document.getElementById('adoptionChart'),{
   type:'line',
   data:{
@@ -189,7 +269,7 @@ new Chart(document.getElementById('adoptionChart'),{
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,232,122,0.05)'}},y:{grid:{color:'rgba(0,232,122,0.05)'},ticks:{callback:v=>v+'%'}}}}
 });
 
-// AI PREDICTION ENGINE
+// ── AI PREDICTION ENGINE ──
 function runPrediction(){
   const crop=document.getElementById('cropType').value;
   const residue=document.getElementById('residue').value;
@@ -200,7 +280,6 @@ function runPrediction(){
   const weather=document.getElementById('weather').value;
   const fieldSize=document.getElementById('fieldSize').value;
 
-  // Simulated Random Forest scoring logic
   let score=0;
   if(residue==='high')score+=25;else if(residue==='medium')score+=12;
   if(machine==='none')score+=20;else if(machine==='partial')score+=8;
@@ -243,7 +322,6 @@ function runPrediction(){
     co2=3200+Math.floor(Math.random()*600);
   }
 
-  // Show result
   document.getElementById('placeholder').style.display='none';
   const rd=document.getElementById('riskDisplay');
   rd.style.display='flex';
@@ -260,10 +338,9 @@ function runPrediction(){
 
   const recsList=document.getElementById('recsList');
   recsList.innerHTML=recs.map(r=>`<div class="rec-item"><span>${r.icon}</span><span>${r.text}</span></div>`).join('');
-
   document.getElementById('co2Val').textContent=co2.toLocaleString('en-IN')+' kg';
 }
 
-// SCROLL REVEAL
+// ── SCROLL REVEAL ──
 const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('up');});},{threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
