@@ -2,400 +2,374 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ParaliAI — AI-Powered Parali Burning Prevention</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<link rel="stylesheet" href="style.css">
+<title>ParaliAI — Stop the Smoke. Save the Soil.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;cursor:none;}
+
+/* ── CUSTOM CURSOR ── */
+.cur{position:fixed;width:8px;height:8px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:width .3s,height .3s;}
+.cur-ring{position:fixed;width:32px;height:32px;border:1px solid rgba(255,255,255,0.35);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .14s;}
+
+/* ── ENTRY SCREEN ── */
+#entry{
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  overflow:hidden;
+}
+
+/* VIDEO */
+#bg-video{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;z-index:0;
+  filter:brightness(0.55) saturate(1.1);
+}
+
+/* LAYERED OVERLAYS */
+.overlay-vignette{
+  position:absolute;inset:0;z-index:1;
+  background:radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.75) 100%);
+}
+.overlay-bottom{
+  position:absolute;bottom:0;left:0;right:0;height:40%;z-index:1;
+  background:linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+}
+.overlay-top{
+  position:absolute;top:0;left:0;right:0;height:20%;z-index:1;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+}
+
+/* LETTERBOX BARS */
+.lb-top,.lb-bottom{
+  position:absolute;left:0;right:0;z-index:2;
+  background:#000;
+  transition:height 1.2s cubic-bezier(.77,0,.18,1);
+}
+.lb-top{top:0;height:80px;}
+.lb-bottom{bottom:0;height:80px;}
+
+/* NOISE GRAIN */
+.grain{
+  position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px;
+  animation:grainMove 0.4s steps(1) infinite;
+}
+@keyframes grainMove{
+  0%{background-position:0 0;}25%{background-position:-50px 20px;}
+  50%{background-position:30px -40px;}75%{background-position:-20px 50px;}
+}
+
+/* SCAN LINE */
+.scanline{
+  position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+}
+
+/* CONTENT */
+.entry-content{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;
+  align-items:center;text-align:center;
+  gap:0;
+  padding-top:1rem;
+}
+
+/* EYEBROW */
+.eyebrow{
+  font-family:'Montserrat',sans-serif;
+  font-size:.65rem;font-weight:700;
+  letter-spacing:.5em;text-transform:uppercase;
+  color:rgba(0,232,122,0.85);
+  margin-bottom:1rem;
+  opacity:0;transform:translateY(12px);
+  transition:opacity 1s,transform 1s cubic-bezier(.16,1,.3,1);
+  display:flex;align-items:center;gap:1.2rem;
+}
+.eyebrow::before,.eyebrow::after{
+  content:'';width:40px;height:1px;
+  background:rgba(0,232,122,0.4);
+}
+
+/* MAIN TITLE */
+.main-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(4rem,13vw,16rem);
+  line-height:.85;letter-spacing:-.01em;
+  color:#fff;
+  opacity:0;transform:scale(.94);
+  transition:opacity 1.1s .4s cubic-bezier(.16,1,.3,1),
+             transform 1.1s .4s cubic-bezier(.16,1,.3,1);
+}
+.main-title .highlight{
+  display:block;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(0,232,122,0.7);
+  transition:color 1s 1.8s, -webkit-text-stroke 1s 1.8s;
+}
+.main-title .highlight.lit{
+  color:#00e87a;
+  -webkit-text-stroke:1px #00e87a;
+  text-shadow:0 0 80px rgba(0,232,122,0.3);
+}
+
+/* SUBTITLE */
+.subtitle{
+  font-family:'Montserrat',sans-serif;
+  font-size:clamp(.75rem,1.5vw,1rem);
+  font-weight:300;letter-spacing:.12em;
+  color:rgba(255,255,255,0.5);
+  margin-top:1rem;max-width:500px;line-height:1.7;
+  opacity:0;transform:translateY(16px);
+  transition:opacity 1s 1.1s,transform 1s 1.1s cubic-bezier(.16,1,.3,1);
+}
+
+/* ENTER BUTTON */
+.enter-wrap{
+  margin-top:1.5rem;
+  opacity:0;transform:translateY(20px);
+  transition:opacity 1s 1.4s,transform 1s 1.4s cubic-bezier(.16,1,.3,1);
+}
+.enter-btn{
+  position:relative;display:inline-flex;align-items:center;gap:1.2rem;
+  background:transparent;border:1px solid rgba(255,255,255,0.25);
+  color:#fff;padding:1.1rem 3rem;
+  font-family:'Montserrat',sans-serif;font-size:.75rem;
+  font-weight:700;letter-spacing:.25em;text-transform:uppercase;
+  cursor:none;text-decoration:none;overflow:hidden;
+  transition:border-color .4s,color .4s;
+}
+.enter-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,232,122,0.15),transparent);
+  transform:translateX(-100%);
+  transition:transform .6s cubic-bezier(.77,0,.18,1);
+}
+.enter-btn:hover{border-color:rgba(0,232,122,0.6);}
+.enter-btn:hover::before{transform:translateX(0);}
+.btn-arrow{
+  width:20px;height:1px;background:currentColor;position:relative;
+  transition:width .3s;
+}
+.btn-arrow::after{
+  content:'';position:absolute;right:0;top:-3px;
+  width:6px;height:6px;border-top:1px solid currentColor;
+  border-right:1px solid currentColor;transform:rotate(45deg);
+}
+.enter-btn:hover .btn-arrow{width:30px;}
+
+/* SDG BADGE */
+.sdg-pill{
+  position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+  z-index:10;display:flex;align-items:center;gap:.8rem;
+  background:rgba(0,0,0,0.4);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.08);border-radius:100px;
+  padding:.6rem 1.4rem;
+  opacity:0;transition:opacity 1s 2s;
+}
+.sdg-dot{width:6px;height:6px;background:#00e87a;border-radius:50%;animation:sdgPulse 2s infinite;}
+@keyframes sdgPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,232,122,.4);}50%{box-shadow:0 0 0 6px rgba(0,232,122,0);}}
+.sdg-pill span{font-family:'Montserrat',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+.sdg-pill span b{color:rgba(0,232,122,0.8);font-weight:700;}
+
+/* CORNER TAGS */
+.corner{
+  position:absolute;z-index:10;
+  font-family:'Montserrat',monospace;font-size:.55rem;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,0.2);
+  opacity:0;transition:opacity 1s 1.6s;
+}
+.corner.tl{top:2rem;left:2.5rem;}
+.corner.tr{top:2rem;right:2.5rem;text-align:right;}
+.corner.bl{bottom:2rem;left:2.5rem;}
+.corner.br{bottom:2rem;right:2.5rem;text-align:right;}
+
+/* PROGRESS LINE — hidden, no auto-enter */
+.progress-line{ display:none; }
+
+/* ── EXIT TRANSITION ── */
+#entry.exiting{
+  animation:exitAnim .9s cubic-bezier(.77,0,.18,1) forwards;
+}
+@keyframes exitAnim{
+  0%{opacity:1;transform:scale(1);}
+  100%{opacity:0;transform:scale(1.04);}
+}
+
+/* ── MAIN SITE ── */
+#main-site{
+  opacity:0;transition:opacity .8s ease;
+  width:100%;height:100%;overflow:auto;
+}
+#main-site.visible{opacity:1;}
+
+/* IFRAME FILLS FULL PAGE */
+#site-frame{
+  width:100%;height:100%;
+  border:none;display:block;
+}
+</style>
 </head>
 <body>
 
 <div class="cur" id="cur"></div>
-<div class="cur-r" id="cur-r"></div>
-<canvas id="bgc"></canvas>
+<div class="cur-ring" id="curRing"></div>
 
-<nav id="nav">
-  <a href="#" class="logo">
-    <div class="logo-icon">
-      <svg viewBox="0 0 36 36" fill="none">
-        <path d="M18 3L33 30H3L18 3Z" stroke="#00e87a" stroke-width="1.5" fill="none"/>
-        <path d="M18 12L26 27H10L18 12Z" fill="rgba(0,232,122,0.15)" stroke="#00e87a" stroke-width="1"/>
-        <circle cx="18" cy="10" r="2" fill="#00e87a"/>
-      </svg>
-    </div>
-    <span class="logo-text">Parali<span>AI</span></span>
-  </a>
-  <ul class="nav-links">
-    <li><a href="#problem">Problem</a></li>
-    <li><a href="#demo">AI Demo</a></li>
-    <li><a href="#modules">Modules</a></li>
-    <li><a href="#sdg">SDG's</a></li>
-    <li><a href="#about">AboutUs</a></li>
-  </ul>
-  <a href="#demo" class="nav-cta">TRY DEMO</a>
-</nav>
+<!-- ═══════════════════════════════════════
+     ENTRY SCREEN
+════════════════════════════════════════ -->
+<div id="entry">
 
-<!-- HERO -->
-<section class="hero" id="home">
-  <canvas id="field-canvas"></canvas>
-  <div>
-    <div class="hero-badge">🌾 Punjab · AI in Agriculture · SDG 13</div>
-    <h1 class="hero-title">
-      STOP THE<br>
-      <span class="line2">SMOKE.</span><br>
-      <span class="line3">SAVE THE SOIL.</span>
+  <!-- VIDEO BACKGROUND -->
+  <video id="bg-video" autoplay loop muted playsinline>
+    <source src="https://res.cloudinary.com/dfonotyfb/video/upload/v1775585556/dds3_1_rqhg7x.mp4" type="video/mp4">
+  </video>
+
+  <!-- OVERLAYS -->
+  <div class="overlay-vignette"></div>
+  <div class="overlay-bottom"></div>
+  <div class="overlay-top"></div>
+  <div class="grain"></div>
+  <div class="scanline"></div>
+
+  <!-- LETTERBOX -->
+  <div class="lb-top" id="lbTop"></div>
+  <div class="lb-bottom" id="lbBottom"></div>
+
+  <!-- CORNER TAGS -->
+  <div class="corner tl" id="ctl">Punjab · India<br>SDG 13 · 2026</div>
+  <div class="corner tr" id="ctr">AI / ML<br>Agricultural System</div>
+  <div class="corner bl" id="cbl">Student Project<br>40-Day Build</div>
+  <div class="corner br" id="cbr">Random Forest<br>scikit-learn</div>
+
+  <!-- MAIN CONTENT -->
+  <div class="entry-content">
+    <div class="eyebrow" id="eyebrow">AI-Powered Stubble Burning Prevention</div>
+    <h1 class="main-title" id="mainTitle">
+      PARALI
+      <span class="highlight" id="aiWord">AI</span>
     </h1>
-    <p class="hero-sub">
-      // AI-powered prediction & recommendation system<br>
-      // Fighting parali burning in Punjab using ML<br>
-      // Real alternatives. Real impact. Real science.
+    <p class="subtitle" id="subtitle">
+      Predict. Recommend. Prevent.<br>
+      Fighting Punjab's greatest environmental crisis<br>with machine learning.
     </p>
-    <div class="hero-actions">
-      <a href="#demo" class="btn-g">Run AI Prediction</a>
-      <a href="#problem" class="btn-outline">Learn the Problem</a>
+    <div class="enter-wrap" id="enterWrap">
+      <a href="#" class="enter-btn" id="enterBtn" onclick="enterSite(event)">
+        Enter Platform
+        <span class="btn-arrow"></span>
+      </a>
     </div>
   </div>
-  <div class="hero-stats">
-    <div class="stat-item">
-      <div class="stat-n">35M</div>
-      <div class="stat-l">Tonnes burned / yr</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-n">9.5M</div>
-      <div class="stat-l">Hectares affected</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-n">500+</div>
-      <div class="stat-l">AQI spike in Delhi</div>
-    </div>
-  </div>
-  <div class="hero-scroll">
-    <div class="scroll-line"></div>
-    <span class="scroll-txt">Scroll to explore</span>
-  </div>
-</section>
 
-<!-- PROBLEM -->
-<section id="problem">
-  <div class="reveal">
-    <div class="sec-tag">The Problem</div>
-    <h2 class="sec-title">WHY PUNJAB<br><em>IS BURNING</em></h2>
-    <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);max-width:560px;line-height:1.8;">Every October–November, millions of farmers set fire to crop stubble. A 40-day window, a 500-year-old habit, and a crisis that suffocates an entire subcontinent.</p>
+  <!-- SDG BADGE -->
+  <div class="sdg-pill" id="sdgPill">
+    <div class="sdg-dot"></div>
+    <span>Aligned with <b>SDG 13</b> · Climate Action</span>
   </div>
-  <div class="problem-grid">
-    <div class="prob-card reveal">
-      <span class="prob-icon">🔥</span>
-      <div class="prob-num">01 — ROOT CAUSE</div>
-      <h3>The 40-Day Trap</h3>
-      <p>Farmers have only 2–4 weeks between rice harvest and wheat sowing. Burning is fast and free. No machine, no time, no alternative — or so it seems.</p>
-    </div>
-    <div class="prob-card reveal" style="transition-delay:.1s">
-      <span class="prob-icon">🌫️</span>
-      <div class="prob-num">02 — HEALTH IMPACT</div>
-      <h3>Air Quality Crisis</h3>
-      <p>Burning parali releases PM2.5, CO₂, SO₂, and black carbon. AQI in Delhi and Punjab spikes beyond 500 — 20× safe levels. Millions develop respiratory illness.</p>
-    </div>
-    <div class="prob-card reveal" style="transition-delay:.2s">
-      <span class="prob-icon">🪱</span>
-      <div class="prob-num">03 — SOIL DAMAGE</div>
-      <h3>Destroying the Land</h3>
-      <p>Heat above 33°C kills soil microorganisms, fungi, and bacteria. Short-term ash nutrients cannot compensate for long-term biological destruction.</p>
-    </div>
-    <div class="prob-card reveal" style="transition-delay:.3s">
-      <span class="prob-icon">💸</span>
-      <div class="prob-num">04 — THE GAP</div>
-      <h3>Solutions Exist — Access Doesn't</h3>
-      <p>Government-subsidized Happy Seeders, Mulchers and Balers exist. But awareness, machine-sharing, logistics, and recommendations remain broken. AI can fix this.</p>
-    </div>
-  </div>
-</section>
 
-<!-- AI DEMO -->
-<section id="demo" class="demo-section">
-  <div class="reveal">
-    <div class="sec-tag">AI / ML Demo</div>
-    <h2 class="sec-title">PREDICT YOUR<br><em>BURN RISK</em></h2>
-    <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);max-width:520px;line-height:1.8;">Enter your farm conditions. Our Random Forest classifier analyzes your inputs and predicts burning risk — then recommends the best alternatives.</p>
-  </div>
-  <div class="demo-wrapper">
-    <!-- INPUT FORM -->
-    <div class="form-card reveal">
-      <h3>Farm Input Parameters</h3>
-      <p>// Powered by supervised ML classification</p>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Crop Type</label>
-          <select id="cropType">
-            <option value="rice">Rice (Paddy)</option>
-            <option value="wheat">Wheat</option>
-            <option value="maize">Maize</option>
-            <option value="sugarcane">Sugarcane</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Residue Amount</label>
-          <select id="residue">
-            <option value="low">Low (&lt;2 tonnes/ha)</option>
-            <option value="medium" selected>Medium (2–5 t/ha)</option>
-            <option value="high">High (&gt;5 tonnes/ha)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Machine Availability</label>
-          <select id="machine">
-            <option value="none">None Available</option>
-            <option value="partial">Partially Available</option>
-            <option value="full">Fully Available</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Labour Availability</label>
-          <select id="labour">
-            <option value="none">No Labour</option>
-            <option value="some" selected>Some Labour</option>
-            <option value="full">Adequate Labour</option>
-          </select>
-        </div>
-        <div class="form-group full">
-          <label>Days Until Next Sowing: <span id="daysVal" style="color:var(--green)">15</span> days</label>
-          <div class="range-wrap">
-            <input type="range" id="days" min="5" max="45" value="15" oninput="document.getElementById('daysVal').textContent=this.value">
-          </div>
-        </div>
-        <div class="form-group full">
-          <label>Budget for Alternatives: ₹<span id="budgetVal" style="color:var(--green)">5000</span></label>
-          <div class="range-wrap">
-            <input type="range" id="budget" min="0" max="20000" step="500" value="5000" oninput="document.getElementById('budgetVal').textContent=parseInt(this.value).toLocaleString('en-IN')">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Weather Conditions</label>
-          <select id="weather">
-            <option value="dry">Dry & Windy</option>
-            <option value="humid" selected>Humid</option>
-            <option value="wet">Wet / Rainy</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Field Size (acres)</label>
-          <select id="fieldSize">
-            <option value="small">Small (&lt;3 acres)</option>
-            <option value="medium" selected>Medium (3–10 acres)</option>
-            <option value="large">Large (&gt;10 acres)</option>
-          </select>
-        </div>
-      </div>
-      <button class="predict-btn" onclick="runPrediction()">
-        <span>⚡</span> Run AI Prediction
-      </button>
-    </div>
+  <!-- PROGRESS LINE (auto-enter countdown) -->
+  <div class="progress-line" id="progressLine"></div>
 
-    <!-- RESULT -->
-    <div class="result-card reveal" style="transition-delay:.15s">
-      <div class="result-placeholder" id="placeholder">
-        <div class="big-icon">🤖</div>
-        <p>// Awaiting farmer inputs<br>// Fill the form and run prediction</p>
-      </div>
-      <div class="risk-display" id="riskDisplay">
-        <div>
-          <div style="font-size:.65rem;font-family:'DM Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;">// ML Risk Classification</div>
-          <div class="risk-badge" id="riskBadge">— RISK LEVEL</div>
-        </div>
-        <div class="risk-meter">
-          <div class="risk-meter-label"><span>BURN RISK SCORE</span><span id="riskPct">—</span></div>
-          <div class="risk-bar"><div class="risk-fill" id="riskFill" style="width:0%"></div></div>
-        </div>
-        <div>
-          <div class="rec-title">// Recommended Alternatives</div>
-          <div class="recs" id="recsList"></div>
-        </div>
-        <div class="co2-box">
-          <div class="co2-label">Estimated CO₂ if burned</div>
-          <div class="co2-val" id="co2Val">—</div>
-          <div class="co2-sub">kg CO₂ equivalent per hectare</div>
-        </div>
-        <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:rgba(0,232,122,0.4);border-top:1px solid var(--border);padding-top:1rem;">
-          Model: Random Forest Classifier · Accuracy: ~87% · scikit-learn
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+</div>
 
-<!-- POLLUTION ANALYSIS -->
-<section id="pollution">
-  <div class="reveal">
-    <div class="sec-tag">Pollution Analysis</div>
-    <h2 class="sec-title">ENVIRONMENTAL<br><em>IMPACT DATA</em></h2>
-  </div>
-  <div class="charts-grid reveal">
-    <div class="chart-card">
-      <h4>AQI vs Burning Season</h4>
-      <p>// Monthly air quality index — Punjab & Delhi</p>
-      <div class="chart-wrap"><canvas id="aqiChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h4>CO₂ Emissions Comparison</h4>
-      <p>// Burning vs sustainable alternatives (tonnes CO₂/ha)</p>
-      <div class="chart-wrap"><canvas id="co2Chart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h4>Soil Health Impact</h4>
-      <p>// Microbial activity % — before vs after burning</p>
-      <div class="chart-wrap"><canvas id="soilChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h4>Alternative Method Adoption</h4>
-      <p>// Farmers using CRM methods 2020–2025</p>
-      <div class="chart-wrap"><canvas id="adoptionChart"></canvas></div>
-    </div>
-  </div>
-</section>
 
-<!-- MODULES -->
-<section id="modules">
-  <div class="reveal">
-    <div class="sec-tag">System Modules</div>
-    <h2 class="sec-title">HOW THE<br><em>AI WORKS</em></h2>
-  </div>
-  <div class="modules-grid">
-    <div class="mod-card reveal">
-      <div class="mod-icon-wrap">🧠</div>
-      <h3>Risk Prediction Engine</h3>
-      <p>Random Forest classifier trained on Punjab farmer data. Takes 8 input parameters and classifies burning probability into Low, Medium, or High risk categories.</p>
-      <span class="mod-tag">scikit-learn · Python</span>
-    </div>
-    <div class="mod-card reveal" style="transition-delay:.1s">
-      <div class="mod-icon-wrap">💡</div>
-      <h3>Recommendation System</h3>
-      <p>Rule-based + ML hybrid that maps farmer conditions to optimal alternatives: composting, mushroom farming, biomass selling, animal feed, or biofuel generation.</p>
-      <span class="mod-tag">Decision Tree · Flask API</span>
-    </div>
-    <div class="mod-card reveal" style="transition-delay:.2s">
-      <div class="mod-icon-wrap">🚜</div>
-      <h3>Machine Sharing Network</h3>
-      <p>K-means clustering groups nearby farmers with similar needs. Optimizes Happy Seeder, Mulcher & Rotavator sharing schedules to reduce per-farmer cost.</p>
-      <span class="mod-tag">K-Means Clustering</span>
-    </div>
-    <div class="mod-card reveal" style="transition-delay:.3s">
-      <div class="mod-icon-wrap">🌍</div>
-      <h3>Pollution Calculator</h3>
-      <p>Estimates CO₂ emissions, PM2.5, AQI impact, and carbon footprint for a given farm if burned. Compares against sustainable alternatives with eco-score rating.</p>
-      <span class="mod-tag">Environmental Modeling</span>
-    </div>
-    <div class="mod-card reveal" style="transition-delay:.4s">
-      <div class="mod-icon-wrap">📊</div>
-      <h3>Farmer Dashboard</h3>
-      <p>Simple, accessible UI supporting Punjabi & Hindi. Icon-based navigation for low-literacy users. Designed for village officers, NGOs, and agricultural centers.</p>
-      <span class="mod-tag">HTML · CSS · JS</span>
-    </div>
-    <div class="mod-card reveal" style="transition-delay:.5s">
-      <div class="mod-icon-wrap">🏛️</div>
-      <h3>Govt. Scheme Integrator</h3>
-      <p>Maps available CRM subsidies, nearby machine rental centers, and government support programs relevant to the farmer's district, residue type, and budget.</p>
-      <span class="mod-tag">Resource Database</span>
-    </div>
-  </div>
-</section>
 
-<!-- SDG -->
-<section id="sdg" class="sdg-section">
-  <div class="reveal">
-    <div class="sec-tag">UN Sustainable Development Goals</div>
-    <h2 class="sec-title">BUILT FOR<br><em>THE PLANET</em></h2>
-    <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);max-width:540px;line-height:1.8;margin-top:1rem;">ParaliAI directly addresses 5 United Nations SDGs — turning a local agricultural problem into a globally relevant solution.</p>
-  </div>
-  <div class="sdg-grid reveal">
-    <div class="sdg-badge">
-      <div class="sdg-num">13</div>
-      <div class="sdg-info">
-        <h4>Climate Action</h4>
-        <p>// Primary SDG — reducing GHG emissions from burning</p>
-      </div>
-    </div>
-    <div class="sdg-badge">
-      <div class="sdg-num">3</div>
-      <div class="sdg-info">
-        <h4>Good Health & Well-being</h4>
-        <p>// Reducing air pollution & respiratory disease</p>
-      </div>
-    </div>
-    <div class="sdg-badge">
-      <div class="sdg-num">15</div>
-      <div class="sdg-info">
-        <h4>Life on Land</h4>
-        <p>// Protecting soil health & biodiversity</p>
-      </div>
-    </div>
-    <div class="sdg-badge">
-      <div class="sdg-num">12</div>
-      <div class="sdg-info">
-        <h4>Responsible Consumption</h4>
-        <p>// Promoting sustainable agricultural production</p>
-      </div>
-    </div>
-    <div class="sdg-badge">
-      <div class="sdg-num">9</div>
-      <div class="sdg-info">
-        <h4>Industry & Innovation</h4>
-        <p>// AI infrastructure for agricultural modernization</p>
-      </div>
-    </div>
-  </div>
-</section>
+<script>
+// ── CURSOR ──
+const cur=document.getElementById('cur'),curRing=document.getElementById('curRing');
+document.addEventListener('mousemove',e=>{
+  cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';
+  curRing.style.left=e.clientX+'px';curRing.style.top=e.clientY+'px';
+});
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='16px';cur.style.height='16px';curRing.style.width='50px';curRing.style.height='50px';});
+  el.addEventListener('mouseleave',()=>{cur.style.width='8px';cur.style.height='8px';curRing.style.width='32px';curRing.style.height='32px';});
+});
 
-<!-- ABOUT -->
-<section id="about">
-  <div class="about-grid">
-    <div class="about-visual reveal">
-      <canvas id="about-c"></canvas>
-      <div class="tech-stack">
-        <div class="tech-title">// Technol  ogy Stack</div>
-        <div class="tech-pills">
-          <span class="pill">Python</span>
-          <span class="pill">scikit-learn</span>
-          <span class="pill">Flask</span>
-          <span class="pill">pandas</span>
-          <span class="pill">Chart.js</span>
-          <span class="pill">HTML/CSS/JS</span>
-          <span class="pill">Random Forest</span>
-          <span class="pill">K-Means</span>
-          <span class="pill">Decision Tree</span>
-        </div>
-      </div>
-    </div>
-    <div class="reveal" style="transition-delay:.15s">
-      <div class="sec-tag">About the Project</div>
-      <h2 class="sec-title">A STUDENT<br>TEAM FROM<br><em>PUNJAB</em></h2>
-      <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);line-height:1.9;margin-top:1.5rem;">This project was built by a student team tackling one of Punjab's most pressing environmental crises. We didn't want to build another chatbot — we wanted to build something that actually matters.</p>
-      <p style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--muted);line-height:1.9;margin-top:1rem;">ParaliAI is a 40-day sprint project connecting AI prediction, environmental science, and real agricultural infrastructure — designed to work not just in presentations, but in actual villages.</p>
-      <div style="margin-top:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
-          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">~87%</div>
-          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">ML Model Accuracy</div>
-        </div>
-        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
-          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">8</div>
-          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">Input Parameters</div>
-        </div>
-        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
-          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">6</div>
-          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">System Modules</div>
-        </div>
-        <div style="border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
-          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">40</div>
-          <div style="font-size:.65rem;font-family:'DM Mono',monospace;color:var(--muted);margin-top:.2rem;">Day Build Sprint</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+// ── ENTRANCE SEQUENCE ──
+function animateIn(){
+  // Open letterbox
+  setTimeout(()=>{
+    document.getElementById('lbTop').style.height='0';
+    document.getElementById('lbBottom').style.height='0';
+  },100);
 
-<footer>
-  <p>© 2026 ParaliAI — Student Project · Punjab, India</p>
-  <p>Built for <a href="#sdg">SDG 13</a> · Climate Action</p>
-</footer>
+  // Title
+  const title=document.getElementById('mainTitle');
+  setTimeout(()=>{title.style.opacity='1';title.style.transform='scale(1)';},400);
 
-<script src="script.js"></script>
+  // AI word lights up green
+  setTimeout(()=>{document.getElementById('aiWord').classList.add('lit');},1800);
+
+  // Eyebrow - show first, no delay
+  const eyebrow=document.getElementById('eyebrow');
+  setTimeout(()=>{eyebrow.style.opacity='1';eyebrow.style.transform='translateY(0)';},200);
+
+  // Subtitle
+  const sub=document.getElementById('subtitle');
+  setTimeout(()=>{sub.style.opacity='1';sub.style.transform='translateY(0)';},1100);
+
+  // Button
+  const btn=document.getElementById('enterWrap');
+  setTimeout(()=>{btn.style.opacity='1';btn.style.transform='translateY(0)';},1400);
+
+  // Corners
+  ['ctbl','ctl','ctr','cbl','cbr'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)setTimeout(()=>{el.style.opacity='1';},1600);
+  });
+  ['ctl','ctr','cbl','cbr'].forEach(id=>{
+    setTimeout(()=>{
+      const el=document.getElementById(id);
+      if(el)el.style.opacity='1';
+    },1600);
+  });
+
+  // SDG pill
+  setTimeout(()=>{document.getElementById('sdgPill').style.opacity='1';},2000);
+
+  // No auto-enter — user must click the button
+}
+
+// ── EXIT TO MAIN SITE ──
+function enterSite(e){
+  if(e)e.preventDefault();
+  triggerExit();
+}
+
+function triggerExit(){
+  const entry=document.getElementById('entry');
+
+  // Flash
+  entry.style.filter='brightness(1.3)';
+  setTimeout(()=>{entry.style.filter='brightness(1)';},80);
+
+  // Exit animation
+  setTimeout(()=>{
+    entry.classList.add('exiting');
+    setTimeout(()=>{
+      sessionStorage.setItem('entryDone','1'); window.location.href = 'parali-ai.html';
+    },900);
+  },100);
+}
+
+// ── START ──
+sessionStorage.removeItem('entryDone'); document.fonts.ready.then(animateIn);
+
+// ── SKIP ON KEY PRESS ──
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===' '||e.key==='Escape')triggerExit();
+});
+</script>
 </body>
-</html>
+</html> 
